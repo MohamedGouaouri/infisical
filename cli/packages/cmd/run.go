@@ -82,17 +82,19 @@ var runCmd = &cobra.Command{
 			util.HandleError(err, "Unable to parse flag")
 		}
 
-		secretsPath, err := cmd.Flags().GetString("path")
+		secretsPaths, err := cmd.Flags().GetString("path")
 		if err != nil {
 			util.HandleError(err, "Unable to parse flag")
 		}
-
-		secrets, err := util.GetAllEnvironmentVariables(models.GetAllSecretsParameters{Environment: environmentName, InfisicalToken: infisicalToken, TagSlugs: tagSlugs, SecretsPath: secretsPath})
-
-		if err != nil {
-			util.HandleError(err, "Could not fetch secrets", "If you are using a service token to fetch secrets, please ensure it is valid")
+		var secrets []models.SingleEnvironmentVariable
+		secretsPathsSplitted := strings.Split(secretsPaths, ",")
+		for _, secretsPath := range secretsPathsSplitted {
+			pathSecrets, err := util.GetAllEnvironmentVariables(models.GetAllSecretsParameters{Environment: environmentName, InfisicalToken: infisicalToken, TagSlugs: tagSlugs, SecretsPath: secretsPath})
+			if err != nil {
+				util.HandleError(err, "Could not fetch secrets", "If you are using a service token to fetch secrets, please ensure it is valid")
+			}
+			secrets = append(secrets, pathSecrets...)
 		}
-
 		if secretOverriding {
 			secrets = util.OverrideSecrets(secrets, util.SECRET_TYPE_PERSONAL)
 		} else {
